@@ -281,6 +281,29 @@ const App = () => {
           gameState={gameState}
           checkUserInput={checkUserInput}
         />
+        <div className="footer">
+          &copy; Copyright by Crypt0zauruS
+          <h1>
+            Follow me on{" "}
+            <a
+              className="twitter"
+              target="_blank"
+              rel="noopener noreferrer"
+              href="https://twitter.com/CryptosaurusRe4"
+            >
+              <i className="fab fa-twitter"></i>
+            </a>{" "}
+            and{" "}
+            <a
+              className="github"
+              target="_blank"
+              rel="noopener noreferrer"
+              href="https://github.com/Crypt0zauruS"
+            >
+              <i className="fab fa-github"></i>
+            </a>
+          </h1>
+        </div>
       </div>
     </div>
   );
