@@ -33,6 +33,7 @@ const App = () => {
   const [turns, setTurns] = useState(20);
   const [strict, setStrict] = useState(false);
   const [start, setStart] = useState(false);
+  const [disabled, setDisabled] = useState(false);
 
   const initGameParameters = () => {
     setActiveButton("");
@@ -42,6 +43,25 @@ const App = () => {
     setUserInput([]);
     setTimer(30);
   };
+
+  // Click listener
+  document.addEventListener("click", clickListener, false);
+  let counting = 0,
+    clicks = 1;
+  function clickListener(e) {
+    clicks++;
+    if (!counting) {
+      counting = 1;
+      setTimeout(function () {
+        if (clicks > 9) {
+          alert("You are not serious...");
+          window.location.reload();
+        }
+        counting = 0;
+        clicks = 0;
+      }, 1000);
+    }
+  }
 
   // Controller
   useEffect(() => {
@@ -94,6 +114,7 @@ const App = () => {
         setTimeout(() => {
           nextSequence();
           setGameState("Game Started");
+          setDisabled(true);
         }, 1000);
       }
     } else {
@@ -103,6 +124,7 @@ const App = () => {
     // Game states
     switch (gameState) {
       case "Game Ended":
+        setDisabled(false);
         setGameDirections("You Win !");
 
         setTimeout(() => {
@@ -120,14 +142,19 @@ const App = () => {
               gamePattern.length === 1 ? "step" : "steps"
             }`
           );
+
+          setDisabled(false);
         }, 800);
+
         break;
 
       case "Game Recall":
+        setDisabled(true);
         recallPattern(gamePattern);
         break;
 
       case "Game Retry":
+        setDisabled(true);
         setGameDirections("Wrong button ! Retry !");
 
         setGamePattern([...gamePattern]);
@@ -139,6 +166,7 @@ const App = () => {
         break;
 
       case "Game Continue":
+        //setDisabled(false);
         setGameState("Game Started");
         nextSequence();
 
@@ -166,6 +194,7 @@ const App = () => {
               setGameState("Game Recall");
               gamePattern.length < turns &&
                 setGameDirections("Playing pattern...");
+              setDisabled(true);
             }, 1000);
           }
         }
@@ -184,6 +213,7 @@ const App = () => {
               setStart(false);
             }, 1000);
           } else {
+            setDisabled(true);
             setTimeout(() => {
               setGameState("Game Retry");
             }, 200);
@@ -212,7 +242,11 @@ const App = () => {
           value={turns}
           onChange={(e) => setTurns(e.target.value)}
         />
-        <button className="game-controls" onClick={() => setStart(!start)}>
+        <button
+          disabled={disabled}
+          className="game-controls"
+          onClick={() => setStart(!start)}
+        >
           {!start ? "Start Game" : "Reset Game"}
         </button>
       </div>
