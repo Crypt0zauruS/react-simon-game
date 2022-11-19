@@ -1,25 +1,255 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useEffect, useState } from "react";
+import ButtonList from "./components/ButtonList";
+import Timer from "./components/Timer";
+import wrong from "./components/wrong.mp3";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "./App.css";
 
-function App() {
+const ButtonConfig = {
+  Buttons: [
+    {
+      color: "red",
+    },
+    {
+      color: "green",
+    },
+    {
+      color: "blue",
+    },
+    {
+      color: "yellow",
+    },
+  ],
+};
+
+const App = () => {
+  const [activeButton, setActiveButton] = useState("");
+  const [gameDirections, setGameDirections] = useState("Click to Start!");
+  const [gameState, setGameState] = useState("Not Started");
+  const [gamePattern, setGamePattern] = useState([]);
+  const [userInput, setUserInput] = useState([]);
+  const [highScore, setHighScore] = useState(0);
+  const [timer, setTimer] = useState(30);
+  const [turns, setTurns] = useState(20);
+  const [strict, setStrict] = useState(false);
+  const [start, setStart] = useState(false);
+
+  const initGameParameters = () => {
+    setActiveButton("");
+    setGameDirections("Welcome to the Simon Game !");
+    setGameState("Not Started");
+    setGamePattern([]);
+    setUserInput([]);
+    setTimer(30);
+  };
+
+  // Controller
+  useEffect(() => {
+    const nextSequence = () => {
+      let randomNumber = Math.floor(Math.random() * 4);
+      let randomChosenColour = ButtonConfig.Buttons[randomNumber].color;
+      setActiveButton(randomChosenColour);
+      setGamePattern([...gamePattern, randomChosenColour]);
+    };
+
+    const waitFor = (ms) => new Promise((r) => setTimeout(r, ms));
+
+    async function asyncForEach(array, callback) {
+      for (let index = 0; index < array.length; index++) {
+        await callback(array[index], index, array);
+      }
+    }
+
+    const recallPattern = async (gamePattern) => {
+      if (gamePattern.length < turns) {
+        await asyncForEach(gamePattern, async (pattern) => {
+          await waitFor(400);
+          setActiveButton(pattern);
+          await waitFor(400);
+          setActiveButton("");
+        });
+        setTimeout(() => {
+          setGameState("Game Continue");
+        }, 400);
+      } else {
+        setTimeout(() => {
+          setGameState("Game Ended");
+        }, 400);
+      }
+    };
+
+    const retryPattern = async (gamePattern) => {
+      await asyncForEach(gamePattern, async (pattern) => {
+        await waitFor(400);
+        setActiveButton(pattern);
+        await waitFor(400);
+        setActiveButton("");
+      });
+    };
+
+    // Start the game
+    if (start) {
+      if (gameState === "Not Started") {
+        setGameDirections("Watch the patterns !");
+        setTimeout(() => {
+          nextSequence();
+          setGameState("Game Started");
+        }, 1000);
+      }
+    } else {
+      initGameParameters();
+    }
+
+    // Game states
+    switch (gameState) {
+      case "Game Ended":
+        setGameDirections("You Win !");
+
+        setTimeout(() => {
+          setStart(false);
+          initGameParameters();
+        }, 1000);
+        break;
+
+      case "Game Started":
+        setUserInput([]);
+        setGameState("Player Turn");
+        setTimeout(() => {
+          setGameDirections(
+            `Level : ${gamePattern.length} ${
+              gamePattern.length === 1 ? "step" : "steps"
+            }`
+          );
+        }, 800);
+        break;
+
+      case "Game Recall":
+        recallPattern(gamePattern);
+        break;
+
+      case "Game Retry":
+        setGameDirections("Wrong button ! Retry !");
+
+        setGamePattern([...gamePattern]);
+        setTimeout(() => {
+          retryPattern(gamePattern);
+        }, 400);
+        setGameState("Game Started");
+
+        break;
+
+      case "Game Continue":
+        setGameState("Game Started");
+        nextSequence();
+
+        break;
+
+      default:
+        break;
+    }
+
+    return () => {
+      setActiveButton("");
+    };
+    // eslint-disable-next-line
+  }, [gameState, start, turns]);
+
+  useEffect(() => {
+    switch (gameState) {
+      case "Player Turn":
+        if (
+          gamePattern[userInput.length - 1] === userInput[userInput.length - 1]
+        ) {
+          //Correct pattern
+          if (gamePattern.length === userInput.length) {
+            setTimeout(() => {
+              setGameState("Game Recall");
+              gamePattern.length < turns &&
+                setGameDirections("Playing pattern...");
+            }, 1000);
+          }
+        }
+        //incorrect pattern
+        else {
+          if (strict) {
+            if (highScore < gamePattern.length) {
+              setHighScore(gamePattern.length - 1);
+            }
+            setGameDirections("You loose !");
+            const audio = new Audio(wrong);
+            audio.play();
+            document.body.classList.add("game-over");
+            setTimeout(() => {
+              document.body.classList.remove("game-over");
+              setStart(false);
+            }, 1000);
+          } else {
+            setTimeout(() => {
+              setGameState("Game Retry");
+            }, 200);
+          }
+        }
+        break;
+
+      default:
+        break;
+    }
+    // eslint-disable-next-line
+  }, [gameState, gamePattern, userInput, highScore]);
+
+  const checkUserInput = (color) => {
+    setUserInput([...userInput, color]);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="container min-vh-auto">
+      <h1 id="game-directions">{gameDirections}</h1>
+      <div className="start-game">
+        <input
+          disabled={!start ? false : true}
+          type="number"
+          min="20"
+          value={turns}
+          onChange={(e) => setTurns(e.target.value)}
+        />
+        <button className="game-controls" onClick={() => setStart(!start)}>
+          {!start ? "Start Game" : "Reset Game"}
+        </button>
+      </div>
+      <div className="container w-50">
+        <div className="row text-center">
+          <button
+            className="game-controls"
+            disabled={!start ? false : true}
+            onClick={() => setStrict(!strict)}
+          >
+            Strict Mode : {strict ? "On" : "Off"}
+          </button>
+        </div>
+        <div className="row text-center">
+          <Timer
+            gameState={gameState}
+            setUserInput={setUserInput}
+            userInput={userInput}
+            timer={timer}
+            setTimer={setTimer}
+            setGameDirections={setGameDirections}
+            setStart={setStart}
+          />
+
+          <div className="col-lg-5 text-center counter">
+            High Score: {strict ? highScore : "Strict mode only"}
+          </div>
+        </div>
+        <ButtonList
+          buttons={ButtonConfig.Buttons}
+          activeButton={activeButton}
+          gameState={gameState}
+          checkUserInput={checkUserInput}
+        />
+      </div>
     </div>
   );
-}
+};
 
 export default App;
