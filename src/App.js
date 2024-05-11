@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import ButtonList from "./components/ButtonList";
 import Timer from "./components/Timer";
 import wrong from "./components/wrong.mp3";
@@ -34,6 +34,14 @@ const App = () => {
   const [strict, setStrict] = useState(false);
   const [start, setStart] = useState(false);
   const [disabled, setDisabled] = useState(false);
+  const modal = useRef(null);
+
+  const modalOpen = function () {
+    modal.current.style.height = "100vh";
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
+  };
 
   const initGameParameters = () => {
     setActiveButton("");
@@ -45,17 +53,19 @@ const App = () => {
   };
 
   // Click listener
-  document.addEventListener("click", clickListener, false);
+  window.addEventListener("click", clickListener, false);
   let counting = 0,
     clicks = 1;
+
   function clickListener(e) {
     clicks++;
+
     if (!counting) {
       counting = 1;
       setTimeout(function () {
-        if (clicks > 9) {
-          alert("You are not serious...");
-          window.location.reload();
+        console.log(clicks);
+        if (clicks > 7) {
+          modalOpen();
         }
         counting = 0;
         clicks = 0;
@@ -233,6 +243,9 @@ const App = () => {
 
   return (
     <div className="container min-vh-auto">
+      <div className="modal" ref={modal}>
+        <h1>You are NOT serious !!</h1>
+      </div>
       <h1 id="game-directions">{gameDirections}</h1>
       <div className="start-game">
         <input
@@ -285,15 +298,6 @@ const App = () => {
           &copy; Copyright by Crypt0zauruS
           <h1>
             Follow me on{" "}
-            <a
-              className="twitter"
-              target="_blank"
-              rel="noopener noreferrer"
-              href="https://twitter.com/CryptosaurusRe4"
-            >
-              <i className="fab fa-twitter"></i>
-            </a>{" "}
-            and{" "}
             <a
               className="github"
               target="_blank"
